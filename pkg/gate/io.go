@@ -8,7 +8,7 @@ import (
 )
 
 type clientReader struct {
-	s      rpc.AppGate_OpenAppServer
+	s      rpc.AppGate_OpenShellServer
 	size   remotecommand.TerminalSize
 	stdin  chan string
 	closed bool
@@ -41,12 +41,12 @@ func (r *clientReader) loop() {
 			r.size.Height = uint16(req.TerminalSize.Height)
 		}
 
-		if len(req.Stdin) > 0 {
-			if len(req.Stdin) != 1 {
-				klog.Errorf("invalid input %#v", req.Stdin)
+		if len(req.Input) > 0 {
+			if len(req.Input) != 1 {
+				klog.Errorf("invalid input %#v", req.Input)
 				return
 			}
-			r.stdin <- req.Stdin[0]
+			r.stdin <- req.Input[0]
 		}
 	}
 }
@@ -77,12 +77,12 @@ func (r *clientReader) Read(p []byte) (n int, err error) {
 }
 
 type stdoutWriter struct {
-	s rpc.AppGate_OpenAppServer
+	s rpc.AppGate_OpenShellServer
 }
 
 func (w stdoutWriter) Write(p []byte) (n int, err error) {
-	err = w.s.Send(&rpc.AppResponse{
-		Stdout: string(p),
+	err = w.s.Send(&rpc.StdOut{
+		Output: string(p),
 	})
 
 	if err != nil {
@@ -94,7 +94,7 @@ func (w stdoutWriter) Write(p []byte) (n int, err error) {
 	return
 }
 
-func genIOStreams(s rpc.AppGate_OpenAppServer, initSize *rpc.TerminalSize) (reader *clientReader, stdout io.Writer) {
+func genIOStreams(s rpc.AppGate_OpenShellServer, initSize *rpc.TerminalSize) (reader *clientReader, stdout io.Writer) {
 	in := clientReader{s: s, size: remotecommand.TerminalSize{
 		Width:  uint16(initSize.Width),
 		Height: uint16(initSize.Height),

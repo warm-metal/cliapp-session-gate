@@ -112,7 +112,7 @@ func (t *terminalGate) attach(app *appcorev1.CliApp, cmd []string, in *clientRea
 	return
 }
 
-func (t *terminalGate) OpenApp(s rpc.AppGate_OpenAppServer) error {
+func (t *terminalGate) OpenShell(s rpc.AppGate_OpenShellServer) error {
 	req, err := s.Recv()
 	if err != nil {
 		klog.Errorf("can't receive date from client: %s", err)
@@ -161,7 +161,7 @@ func (t *terminalGate) OpenApp(s rpc.AppGate_OpenAppServer) error {
 	stdin, stdout := genIOStreams(s, req.TerminalSize)
 	defer stdin.Close()
 
-	if err = t.attach(app, req.Stdin, stdin, stdout); err != nil {
+	if err = t.attach(app, req.Input, stdin, stdout); err != nil {
 		if details, ok := err.(exec.CodeExitError); ok {
 			klog.Errorf("can't open stream of app %s: %s", &sessionKey, details.Err.Error())
 			return status.Errorf(codes.Aborted, "%d", details.Code)

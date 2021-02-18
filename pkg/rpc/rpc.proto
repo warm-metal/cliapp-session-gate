@@ -2,7 +2,7 @@ syntax = "proto3";
 package rpc;
 
 service AppGate {
-    rpc OpenApp(stream OpenAppRequest) returns(stream AppResponse) {}
+    rpc OpenShell(stream StdIn) returns(stream StdOut) {}
 }
 
 message App {
@@ -15,12 +15,12 @@ message TerminalSize {
     uint32 Height = 2;
 }
 
-message OpenAppRequest {
+message StdIn {
     App App = 1;
-    repeated string Stdin = 2;
+    repeated string Input = 2;
     TerminalSize TerminalSize = 3;
 }
 
-message AppResponse {
-    string Stdout = 1;
+message StdOut {
+    string Output = 1;
 }

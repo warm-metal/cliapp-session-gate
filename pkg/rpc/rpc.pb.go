@@ -118,96 +118,96 @@ func (m *TerminalSize) GetHeight() uint32 {
 	return 0
 }
 
-type OpenAppRequest struct {
+type StdIn struct {
 	App                  *App          `protobuf:"bytes,1,opt,name=App,proto3" json:"App,omitempty"`
-	Stdin                []string      `protobuf:"bytes,2,rep,name=Stdin,proto3" json:"Stdin,omitempty"`
+	Input                []string      `protobuf:"bytes,2,rep,name=Input,proto3" json:"Input,omitempty"`
 	TerminalSize         *TerminalSize `protobuf:"bytes,3,opt,name=TerminalSize,proto3" json:"TerminalSize,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
 	XXX_unrecognized     []byte        `json:"-"`
 	XXX_sizecache        int32         `json:"-"`
 }
 
-func (m *OpenAppRequest) Reset()         { *m = OpenAppRequest{} }
-func (m *OpenAppRequest) String() string { return proto.CompactTextString(m) }
-func (*OpenAppRequest) ProtoMessage()    {}
-func (*OpenAppRequest) Descriptor() ([]byte, []int) {
+func (m *StdIn) Reset()         { *m = StdIn{} }
+func (m *StdIn) String() string { return proto.CompactTextString(m) }
+func (*StdIn) ProtoMessage()    {}
+func (*StdIn) Descriptor() ([]byte, []int) {
 	return fileDescriptor_77a6da22d6a3feb1, []int{2}
 }
 
-func (m *OpenAppRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_OpenAppRequest.Unmarshal(m, b)
+func (m *StdIn) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_StdIn.Unmarshal(m, b)
 }
-func (m *OpenAppRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_OpenAppRequest.Marshal(b, m, deterministic)
+func (m *StdIn) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_StdIn.Marshal(b, m, deterministic)
 }
-func (m *OpenAppRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_OpenAppRequest.Merge(m, src)
+func (m *StdIn) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_StdIn.Merge(m, src)
 }
-func (m *OpenAppRequest) XXX_Size() int {
-	return xxx_messageInfo_OpenAppRequest.Size(m)
+func (m *StdIn) XXX_Size() int {
+	return xxx_messageInfo_StdIn.Size(m)
 }
-func (m *OpenAppRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_OpenAppRequest.DiscardUnknown(m)
+func (m *StdIn) XXX_DiscardUnknown() {
+	xxx_messageInfo_StdIn.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_OpenAppRequest proto.InternalMessageInfo
+var xxx_messageInfo_StdIn proto.InternalMessageInfo
 
-func (m *OpenAppRequest) GetApp() *App {
+func (m *StdIn) GetApp() *App {
 	if m != nil {
 		return m.App
 	}
 	return nil
 }
 
-func (m *OpenAppRequest) GetStdin() []string {
+func (m *StdIn) GetInput() []string {
 	if m != nil {
-		return m.Stdin
+		return m.Input
 	}
 	return nil
 }
 
-func (m *OpenAppRequest) GetTerminalSize() *TerminalSize {
+func (m *StdIn) GetTerminalSize() *TerminalSize {
 	if m != nil {
 		return m.TerminalSize
 	}
 	return nil
 }
 
-type AppResponse struct {
-	Stdout               string   `protobuf:"bytes,1,opt,name=Stdout,proto3" json:"Stdout,omitempty"`
+type StdOut struct {
+	Output               string   `protobuf:"bytes,1,opt,name=Output,proto3" json:"Output,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
 }
 
-func (m *AppResponse) Reset()         { *m = AppResponse{} }
-func (m *AppResponse) String() string { return proto.CompactTextString(m) }
-func (*AppResponse) ProtoMessage()    {}
-func (*AppResponse) Descriptor() ([]byte, []int) {
+func (m *StdOut) Reset()         { *m = StdOut{} }
+func (m *StdOut) String() string { return proto.CompactTextString(m) }
+func (*StdOut) ProtoMessage()    {}
+func (*StdOut) Descriptor() ([]byte, []int) {
 	return fileDescriptor_77a6da22d6a3feb1, []int{3}
 }
 
-func (m *AppResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_AppResponse.Unmarshal(m, b)
+func (m *StdOut) XXX_Unmarshal(b []byte) error {
+	return xxx_messageInfo_StdOut.Unmarshal(m, b)
 }
-func (m *AppResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_AppResponse.Marshal(b, m, deterministic)
+func (m *StdOut) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
+	return xxx_messageInfo_StdOut.Marshal(b, m, deterministic)
 }
-func (m *AppResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AppResponse.Merge(m, src)
+func (m *StdOut) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_StdOut.Merge(m, src)
 }
-func (m *AppResponse) XXX_Size() int {
-	return xxx_messageInfo_AppResponse.Size(m)
+func (m *StdOut) XXX_Size() int {
+	return xxx_messageInfo_StdOut.Size(m)
 }
-func (m *AppResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_AppResponse.DiscardUnknown(m)
+func (m *StdOut) XXX_DiscardUnknown() {
+	xxx_messageInfo_StdOut.DiscardUnknown(m)
 }
 
-var xxx_messageInfo_AppResponse proto.InternalMessageInfo
+var xxx_messageInfo_StdOut proto.InternalMessageInfo
 
-func (m *AppResponse) GetStdout() string {
+func (m *StdOut) GetOutput() string {
 	if m != nil {
-		return m.Stdout
+		return m.Output
 	}
 	return ""
 }
@@ -215,30 +215,30 @@ func (m *AppResponse) GetStdout() string {
 func init() {
 	proto.RegisterType((*App)(nil), "rpc.App")
 	proto.RegisterType((*TerminalSize)(nil), "rpc.TerminalSize")
-	proto.RegisterType((*OpenAppRequest)(nil), "rpc.OpenAppRequest")
-	proto.RegisterType((*AppResponse)(nil), "rpc.AppResponse")
+	proto.RegisterType((*StdIn)(nil), "rpc.StdIn")
+	proto.RegisterType((*StdOut)(nil), "rpc.StdOut")
 }
 
 func init() { proto.RegisterFile("rpc.proto", fileDescriptor_77a6da22d6a3feb1) }
 
 var fileDescriptor_77a6da22d6a3feb1 = []byte{
-	// 253 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x54, 0x90, 0xc1, 0x4b, 0xc3, 0x30,
-	0x14, 0xc6, 0xed, 0xea, 0x36, 0xfb, 0xe6, 0x44, 0x9f, 0x43, 0xca, 0xf0, 0x30, 0x02, 0x42, 0x4f,
-	0x43, 0x26, 0xea, 0xc5, 0x4b, 0x4f, 0x7a, 0x13, 0x52, 0xc1, 0x73, 0x6d, 0x1f, 0x2e, 0xe0, 0xd2,
-	0x67, 0x9b, 0x1d, 0xf4, 0xaf, 0x97, 0xbc, 0x06, 0xb5, 0xa7, 0xe4, 0xcb, 0x97, 0xef, 0xcb, 0x2f,
-	0x0f, 0x92, 0x96, 0xab, 0x35, 0xb7, 0x8d, 0x6b, 0x30, 0x6e, 0xb9, 0x52, 0xf7, 0x10, 0xe7, 0xcc,
-	0x88, 0x70, 0x68, 0xcb, 0x1d, 0xa5, 0xd1, 0x2a, 0xca, 0x12, 0x2d, 0x7b, 0xbc, 0x84, 0xc4, 0xaf,
-	0x1d, 0x97, 0x15, 0xa5, 0x23, 0x31, 0xfe, 0x0e, 0xd4, 0x03, 0x1c, 0xbf, 0x50, 0xbb, 0x33, 0xb6,
-	0xfc, 0x28, 0xcc, 0x37, 0xe1, 0x02, 0xc6, 0xaf, 0xa6, 0x76, 0x5b, 0xa9, 0x98, 0xeb, 0x5e, 0xe0,
-	0x05, 0x4c, 0x9e, 0xc8, 0xbc, 0x6f, 0x9d, 0x14, 0xcc, 0x75, 0x50, 0xea, 0x0b, 0x4e, 0x9e, 0x99,
-	0x6c, 0xce, 0xac, 0xe9, 0x73, 0x4f, 0x9d, 0xc3, 0xa5, 0x80, 0x48, 0x7a, 0xb6, 0x39, 0x5a, 0x7b,
-	0x4c, 0xef, 0x0a, 0xdd, 0x02, 0xc6, 0x85, 0xab, 0x8d, 0x4d, 0x47, 0xab, 0x38, 0x4b, 0x74, 0x2f,
-	0xf0, 0x76, 0x48, 0x90, 0xc6, 0x12, 0x3d, 0x93, 0xe8, 0x7f, 0x43, 0x0f, 0xae, 0xa9, 0x2b, 0x98,
-	0xc9, 0xb3, 0x1d, 0x37, 0xb6, 0x23, 0x4f, 0x58, 0xb8, 0xba, 0xd9, 0xbb, 0xf0, 0xf7, 0xa0, 0x36,
-	0x39, 0x4c, 0x73, 0xe6, 0xc7, 0xd2, 0x11, 0xde, 0xc1, 0x34, 0xc0, 0xe2, 0xb9, 0xb4, 0x0f, 0xd1,
-	0x97, 0xa7, 0xbf, 0xb4, 0xa1, 0x54, 0x1d, 0x64, 0xd1, 0x75, 0xf4, 0x36, 0x91, 0x39, 0xdf, 0xfc,
-	0x04, 0x00, 0x00, 0xff, 0xff, 0x7d, 0x99, 0x72, 0xea, 0x74, 0x01, 0x00, 0x00,
+	// 248 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x54, 0x90, 0x31, 0x4f, 0xc3, 0x30,
+	0x10, 0x85, 0x09, 0x21, 0x01, 0x5f, 0xe9, 0xc0, 0xa9, 0x42, 0x51, 0xc5, 0x50, 0x79, 0x8a, 0x18,
+	0x2a, 0x54, 0x54, 0xb1, 0xb0, 0x64, 0x82, 0x4e, 0x91, 0x1c, 0x24, 0xe6, 0x90, 0x58, 0x24, 0x52,
+	0xea, 0x9e, 0xc2, 0x79, 0xe1, 0xd7, 0x23, 0x5f, 0x8a, 0xa0, 0x93, 0xef, 0xf9, 0xfc, 0xde, 0x7d,
+	0x3e, 0x50, 0x23, 0x35, 0x6b, 0x1a, 0x0f, 0x7c, 0xc0, 0x78, 0xa4, 0x46, 0x3f, 0x41, 0x5c, 0x10,
+	0x21, 0xc2, 0x85, 0xab, 0xf7, 0x36, 0x8b, 0x56, 0x51, 0xae, 0x8c, 0xd4, 0x78, 0x07, 0x2a, 0x9c,
+	0x5f, 0x54, 0x37, 0x36, 0x3b, 0x97, 0xc6, 0xdf, 0x85, 0x7e, 0x86, 0xeb, 0x37, 0x3b, 0xee, 0x7b,
+	0x57, 0x0f, 0x55, 0xff, 0x6d, 0x71, 0x01, 0xc9, 0x7b, 0xdf, 0x72, 0x27, 0x11, 0x73, 0x33, 0x09,
+	0xbc, 0x85, 0xf4, 0xd5, 0xf6, 0x9f, 0x1d, 0x4b, 0xc0, 0xdc, 0x1c, 0x95, 0x26, 0x48, 0x2a, 0x6e,
+	0x77, 0x0e, 0x97, 0x32, 0x5f, 0x4c, 0xb3, 0xcd, 0xd5, 0x3a, 0xd0, 0x15, 0x44, 0x46, 0xa0, 0x16,
+	0x90, 0xec, 0x1c, 0xf9, 0xe0, 0x8d, 0x73, 0x65, 0x26, 0x81, 0xdb, 0xd3, 0xc1, 0x59, 0x2c, 0xd6,
+	0x1b, 0xb1, 0xfe, 0x6f, 0x98, 0x93, 0x67, 0x7a, 0x05, 0x69, 0xc5, 0x6d, 0xe9, 0x39, 0x30, 0x95,
+	0x9e, 0x43, 0xee, 0xf4, 0xdb, 0xa3, 0xda, 0x6c, 0xe1, 0xb2, 0x20, 0x7a, 0xa9, 0xd9, 0xe2, 0x3d,
+	0xa8, 0x92, 0xac, 0xab, 0x3a, 0x3b, 0x0c, 0x08, 0x12, 0x2d, 0xb8, 0xcb, 0xd9, 0x6f, 0x5d, 0x7a,
+	0xd6, 0x67, 0x79, 0xf4, 0x10, 0x7d, 0xa4, 0xb2, 0xcd, 0xc7, 0x9f, 0x00, 0x00, 0x00, 0xff, 0xff,
+	0xf3, 0xe9, 0x85, 0x34, 0x5a, 0x01, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -253,7 +253,7 @@ const _ = grpc.SupportPackageIsVersion4
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://godoc.org/google.golang.org/grpc#ClientConn.NewStream.
 type AppGateClient interface {
-	OpenApp(ctx context.Context, opts ...grpc.CallOption) (AppGate_OpenAppClient, error)
+	OpenShell(ctx context.Context, opts ...grpc.CallOption) (AppGate_OpenShellClient, error)
 }
 
 type appGateClient struct {
@@ -264,31 +264,31 @@ func NewAppGateClient(cc *grpc.ClientConn) AppGateClient {
 	return &appGateClient{cc}
 }
 
-func (c *appGateClient) OpenApp(ctx context.Context, opts ...grpc.CallOption) (AppGate_OpenAppClient, error) {
-	stream, err := c.cc.NewStream(ctx, &_AppGate_serviceDesc.Streams[0], "/rpc.AppGate/OpenApp", opts...)
+func (c *appGateClient) OpenShell(ctx context.Context, opts ...grpc.CallOption) (AppGate_OpenShellClient, error) {
+	stream, err := c.cc.NewStream(ctx, &_AppGate_serviceDesc.Streams[0], "/rpc.AppGate/OpenShell", opts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &appGateOpenAppClient{stream}
+	x := &appGateOpenShellClient{stream}
 	return x, nil
 }
 
-type AppGate_OpenAppClient interface {
-	Send(*OpenAppRequest) error
-	Recv() (*AppResponse, error)
+type AppGate_OpenShellClient interface {
+	Send(*StdIn) error
+	Recv() (*StdOut, error)
 	grpc.ClientStream
 }
 
-type appGateOpenAppClient struct {
+type appGateOpenShellClient struct {
 	grpc.ClientStream
 }
 
-func (x *appGateOpenAppClient) Send(m *OpenAppRequest) error {
+func (x *appGateOpenShellClient) Send(m *StdIn) error {
 	return x.ClientStream.SendMsg(m)
 }
 
-func (x *appGateOpenAppClient) Recv() (*AppResponse, error) {
-	m := new(AppResponse)
+func (x *appGateOpenShellClient) Recv() (*StdOut, error) {
+	m := new(StdOut)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -297,41 +297,41 @@ func (x *appGateOpenAppClient) Recv() (*AppResponse, error) {
 
 // AppGateServer is the server API for AppGate service.
 type AppGateServer interface {
-	OpenApp(AppGate_OpenAppServer) error
+	OpenShell(AppGate_OpenShellServer) error
 }
 
 // UnimplementedAppGateServer can be embedded to have forward compatible implementations.
 type UnimplementedAppGateServer struct {
 }
 
-func (*UnimplementedAppGateServer) OpenApp(srv AppGate_OpenAppServer) error {
-	return status.Errorf(codes.Unimplemented, "method OpenApp not implemented")
+func (*UnimplementedAppGateServer) OpenShell(srv AppGate_OpenShellServer) error {
+	return status.Errorf(codes.Unimplemented, "method OpenShell not implemented")
 }
 
 func RegisterAppGateServer(s *grpc.Server, srv AppGateServer) {
 	s.RegisterService(&_AppGate_serviceDesc, srv)
 }
 
-func _AppGate_OpenApp_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(AppGateServer).OpenApp(&appGateOpenAppServer{stream})
+func _AppGate_OpenShell_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(AppGateServer).OpenShell(&appGateOpenShellServer{stream})
 }
 
-type AppGate_OpenAppServer interface {
-	Send(*AppResponse) error
-	Recv() (*OpenAppRequest, error)
+type AppGate_OpenShellServer interface {
+	Send(*StdOut) error
+	Recv() (*StdIn, error)
 	grpc.ServerStream
 }
 
-type appGateOpenAppServer struct {
+type appGateOpenShellServer struct {
 	grpc.ServerStream
 }
 
-func (x *appGateOpenAppServer) Send(m *AppResponse) error {
+func (x *appGateOpenShellServer) Send(m *StdOut) error {
 	return x.ServerStream.SendMsg(m)
 }
 
-func (x *appGateOpenAppServer) Recv() (*OpenAppRequest, error) {
-	m := new(OpenAppRequest)
+func (x *appGateOpenShellServer) Recv() (*StdIn, error) {
+	m := new(StdIn)
 	if err := x.ServerStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -344,8 +344,8 @@ var _AppGate_serviceDesc = grpc.ServiceDesc{
 	Methods:     []grpc.MethodDesc{},
 	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "OpenApp",
-			Handler:       _AppGate_OpenApp_Handler,
+			StreamName:    "OpenShell",
+			Handler:       _AppGate_OpenShell_Handler,
 			ServerStreams: true,
 			ClientStreams: true,
 		},
