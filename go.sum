@@ -971,6 +971,10 @@ github.com/vishvananda/netns v0.0.0-20191106174202-0a2b9b5464df/go.mod h1:JP3t17
 github.com/vmware/govmomi v0.20.3/go.mod h1:URlwyTFZX72RmxtxuaFL2Uj3fD1JTvZdx59bHWk6aFU=
 github.com/warm-metal/cliapp v0.0.0-20210217123107-824d13bc6aed h1:+6fECgYqBBeHpi+yb4FVmZfKcOnQCxeM5+TveVPDGxE=
 github.com/warm-metal/cliapp v0.0.0-20210217123107-824d13bc6aed/go.mod h1:2kCF6edKP4TktRDuPF+IIUUurcHMARWF61q15Q8+Ufw=
+github.com/warm-metal/cliapp v0.0.0-20210219014851-1374765372c9 h1:n4MYvN0lIhEC2vGk+tLwbHmk3WeEHiZCC2mWcVFPMO4=
+github.com/warm-metal/cliapp v0.0.0-20210219014851-1374765372c9/go.mod h1:2kCF6edKP4TktRDuPF+IIUUurcHMARWF61q15Q8+Ufw=
+github.com/warm-metal/cliapp v0.0.0-20210219041214-f93de923a220 h1:J5LI9gsFqnjeTmJgJBDUyuGVcCz4EomDH1OeDKcDrM4=
+github.com/warm-metal/cliapp v0.0.0-20210219041214-f93de923a220/go.mod h1:2kCF6edKP4TktRDuPF+IIUUurcHMARWF61q15Q8+Ufw=
 github.com/willf/bitset v1.1.11-0.20200630133818-d5bec3311243/go.mod h1:RjeCKbqT1RxIR/KWY6phxZiaY1IyutSBfGjNPySAYV4=
 github.com/xanzy/go-gitlab v0.31.0/go.mod h1:sPLojNBn68fMUWSxIJtdVVIP8uSBYqesTfDUseX11Ug=
 github.com/xanzy/go-gitlab v0.32.0/go.mod h1:sPLojNBn68fMUWSxIJtdVVIP8uSBYqesTfDUseX11Ug=
