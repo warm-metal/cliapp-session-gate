@@ -82,17 +82,24 @@ func (t *terminalGate) init() {
 }
 
 func (t *terminalGate) attach(app *appcorev1.CliApp, cmd []string, in *clientReader, stdout io.Writer) (err error) {
-	req := t.clientset.CoreV1().RESTClient().Post().
-		Resource("pods").Name(app.Status.PodName).Namespace(app.Namespace).
-		SubResource("exec")
-	req.VersionedParams(&corev1.PodExecOptions{
+	opts := &corev1.PodExecOptions{
 		Container: "workspace",
-		Command:   append([]string{"chroot", "/app-root"}, append(app.Spec.Command, cmd...)...),
 		Stdin:     true,
 		Stdout:    true,
 		Stderr:    false,
 		TTY:       true,
-	}, scheme.ParameterCodec)
+	}
+
+	if len(app.Spec.Command) > 0 {
+		opts.Command = append([]string{"chroot", "/app-root"}, append(app.Spec.Command, cmd...)...)
+	} else {
+		opts.Command = cmd
+	}
+
+	req := t.clientset.CoreV1().RESTClient().Post().
+		Resource("pods").Name(app.Status.PodName).Namespace(app.Namespace).
+		SubResource("exec").
+		VersionedParams(opts, scheme.ParameterCodec)
 
 	remoteExec, err := remotecommand.NewSPDYExecutor(t.config, "POST", req.URL())
 	if err != nil {
