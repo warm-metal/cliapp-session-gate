@@ -1,7 +1,6 @@
 package libcli
 
 import (
-	"bufio"
 	"context"
 	"fmt"
 	"github.com/moby/term"
@@ -16,15 +15,15 @@ import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/client-go/kubernetes"
 	"k8s.io/client-go/util/exec"
-	"k8s.io/klog/v2"
 	"net/url"
 	"os"
 	"os/signal"
 	"strconv"
+	"syscall"
 	"time"
 )
 
-func FetchGateEndpoints(clientset *kubernetes.Clientset) ([]string, error)  {
+func FetchGateEndpoints(clientset *kubernetes.Clientset) ([]string, error) {
 	return fetchServiceEndpoints(clientset, "cliapp-system", "cliapp-session-gate", "session-gate")
 }
 
@@ -50,7 +49,6 @@ func fetchServiceEndpoints(clientset *kubernetes.Clientset, namespace, service, 
 	if svcPort > 0 {
 		for _, ingress := range svc.Status.LoadBalancer.Ingress {
 			if len(ingress.Hostname) > 0 {
-				// FIXME deduct scheme from port protocol
 				addrs = append(addrs, fmt.Sprintf("tcp://%s:%d", ingress.Hostname, svcPort))
 			}
 
@@ -80,16 +78,6 @@ func fetchServiceEndpoints(clientset *kubernetes.Clientset, namespace, service, 
 }
 
 func ExecCliApp(endpoints []string, app *appcorev1.CliApp, args []string, stdin io.Reader, stdout io.Writer) error {
-	stdInFd, isTerminal := term.GetFdInfo(stdin)
-	if !isTerminal {
-		return xerrors.Errorf("can't execute the command without a terminal")
-	}
-
-	stdOutFd, isTerminal := term.GetFdInfo(stdout)
-	if  !isTerminal {
-		return xerrors.Errorf("can't execute the command without a terminal")
-	}
-
 	var cc *grpc.ClientConn
 	for i, ep := range endpoints {
 		endpoint, err := url.Parse(ep)
@@ -114,11 +102,30 @@ func ExecCliApp(endpoints []string, app *appcorev1.CliApp, args []string, stdin 
 		return xerrors.Errorf("all remote endpoints are unavailable")
 	}
 
+	stdInFd, isTerminal := term.GetFdInfo(stdin)
+	if !isTerminal {
+		return xerrors.Errorf("can't execute the command without a terminal")
+	}
+
+	stdOutFd, isTerminal := term.GetFdInfo(stdout)
+	if !isTerminal {
+		return xerrors.Errorf("can't execute the command without a terminal")
+	}
+
+	state, err := term.MakeRaw(stdInFd)
+	if err != nil {
+		return xerrors.Errorf("can't initialize terminal: %s", err)
+	}
+
+	defer func() {
+		term.RestoreTerminal(stdInFd, state)
+	}()
+
 	appCli := rpc.NewAppGateClient(cc)
 
 	sh, err := appCli.OpenShell(context.TODO())
 	if err != nil {
-		return xerrors.Errorf("can't open app session: %s", err)
+		return xerrors.Errorf("unable to open app session: %s", err)
 	}
 
 	err = sh.Send(&rpc.StdIn{
@@ -140,25 +147,21 @@ func ExecCliApp(endpoints []string, app *appcorev1.CliApp, args []string, stdin 
 	inCh := make(chan string)
 
 	go func() {
-		stdReader := bufio.NewReader(stdin)
 		defer close(inCh)
+
+		buf := make([]byte, 1024)
 		for {
-			line, prefix, err := stdReader.ReadLine()
-			if err != nil && err != io.EOF {
+			n, err := stdin.Read(buf)
+			if err != nil {
+				if err == io.EOF {
+					return
+				}
+
 				errCh <- xerrors.Errorf("can't read the input:%s", err)
 				return
 			}
 
-			if err == io.EOF {
-				return
-			}
-
-			if prefix {
-				errCh <- xerrors.Errorf("line is too lang")
-				return
-			}
-
-			inCh <- string(line)
+			inCh <- string(buf[:n])
 		}
 	}()
 
@@ -191,18 +194,15 @@ func ExecCliApp(endpoints []string, app *appcorev1.CliApp, args []string, stdin 
 		}
 	}()
 
-	state, err := term.MakeRaw(stdInFd)
-	if err != nil {
-		return xerrors.Errorf("can't initialize terminal: %s", err)
-	}
-
-	defer func() {
-		term.RestoreTerminal(stdInFd, state)
-	}()
-
 	winch := make(chan os.Signal, 1)
 	signal.Notify(winch, unix.SIGWINCH)
 	defer signal.Stop(winch)
+	defer close(winch)
+
+	signCh := make(chan os.Signal, 1)
+	signal.Ignore(syscall.SIGPIPE)
+	signal.Notify(signCh, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+	defer close(signCh)
 
 	for {
 		select {
@@ -217,6 +217,9 @@ func ExecCliApp(endpoints []string, app *appcorev1.CliApp, args []string, stdin 
 			if err = sh.Send(&rpc.StdIn{TerminalSize: size}); err != nil {
 				return err
 			}
+		case sig := <-signCh:
+			signal.Stop(signCh)
+			return exec.CodeExitError{Code: 1, Err: xerrors.Errorf("signal %s", sig)}
 		case in, ok := <-inCh:
 			if ok {
 				if err = sh.Send(&rpc.StdIn{Input: []string{in}}); err != nil {
@@ -236,7 +239,7 @@ func ExecCliApp(endpoints []string, app *appcorev1.CliApp, args []string, stdin 
 func getSize(fd uintptr) *rpc.TerminalSize {
 	winsize, err := term.GetWinsize(fd)
 	if err != nil {
-		klog.Errorf("unable to get terminal size: %v", err)
+		fmt.Fprintf(os.Stderr, "unable to get terminal size: %v", err)
 		return nil
 	}
 

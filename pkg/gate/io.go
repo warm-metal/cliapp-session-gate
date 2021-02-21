@@ -9,7 +9,7 @@ import (
 
 type clientReader struct {
 	s      rpc.AppGate_OpenShellServer
-	size   remotecommand.TerminalSize
+	sizeCh chan *remotecommand.TerminalSize
 	stdin  chan string
 	closed bool
 }
@@ -23,6 +23,7 @@ func (r *clientReader) loop() {
 	defer func() {
 		r.closed = true
 		close(r.stdin)
+		close(r.sizeCh)
 	}()
 
 	for {
@@ -30,15 +31,22 @@ func (r *clientReader) loop() {
 			return
 		}
 
+		klog.V(1).Info("prepare to receive stdin")
 		req, err := r.s.Recv()
 		if err != nil {
-			klog.Errorf("can't read stdin: %s", err)
+			klog.Errorf("unable to read stdin: %s", err)
 			return
 		}
 
+		klog.V(1).Infof("stdin %s", req.String())
+
 		if req.TerminalSize != nil {
-			r.size.Width = uint16(req.TerminalSize.Width)
-			r.size.Height = uint16(req.TerminalSize.Height)
+			go func() {
+				r.sizeCh <- &remotecommand.TerminalSize{
+					Width:  uint16(req.TerminalSize.Width),
+					Height: uint16(req.TerminalSize.Height),
+				}
+			}()
 		}
 
 		if len(req.Input) > 0 {
@@ -46,6 +54,7 @@ func (r *clientReader) loop() {
 				klog.Errorf("invalid input %#v", req.Input)
 				return
 			}
+			klog.V(1).Info("write stdin channel")
 			r.stdin <- req.Input[0]
 		}
 	}
@@ -56,10 +65,16 @@ func (r clientReader) Next() *remotecommand.TerminalSize {
 		return nil
 	}
 
-	return &r.size
+	size, ok := <-r.sizeCh
+	if !ok {
+		return nil
+	}
+
+	return size
 }
 
 func (r *clientReader) Read(p []byte) (n int, err error) {
+	klog.V(1).Info("read stdin channel")
 	in, ok := <-r.stdin
 	if !ok {
 		err = io.EOF
@@ -72,6 +87,7 @@ func (r *clientReader) Read(p []byte) (n int, err error) {
 		return
 	}
 
+	klog.V(1).Info("stdin buffers exchange")
 	n = copy(p, in)
 	return
 }
@@ -81,6 +97,7 @@ type stdoutWriter struct {
 }
 
 func (w stdoutWriter) Write(p []byte) (n int, err error) {
+	klog.V(1).Infof("stdout: %s", string(p))
 	err = w.s.Send(&rpc.StdOut{
 		Output: string(p),
 	})
@@ -95,10 +112,13 @@ func (w stdoutWriter) Write(p []byte) (n int, err error) {
 }
 
 func genIOStreams(s rpc.AppGate_OpenShellServer, initSize *rpc.TerminalSize) (reader *clientReader, stdout io.Writer) {
-	in := clientReader{s: s, size: remotecommand.TerminalSize{
-		Width:  uint16(initSize.Width),
-		Height: uint16(initSize.Height),
-	}}
+	in := clientReader{s: s, sizeCh: make(chan *remotecommand.TerminalSize)}
+	go func() {
+		in.sizeCh <- &remotecommand.TerminalSize{
+			Width:  uint16(initSize.Width),
+			Height: uint16(initSize.Height),
+		}
+	}()
 	go in.loop()
 	return &in, &stdoutWriter{s}
 }

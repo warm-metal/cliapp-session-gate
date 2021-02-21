@@ -160,7 +160,7 @@ func (t *terminalGate) OpenShell(s rpc.AppGate_OpenShellServer) error {
 
 	defer func() {
 		if err := session.close(s.Context(), &sessionKey); err != nil {
-			klog.Errorf("unable to close session of app %s", &sessionKey)
+			klog.Errorf("unable to close session of app %s: %s", &sessionKey, err)
 		}
 	}()
 
@@ -170,13 +170,14 @@ func (t *terminalGate) OpenShell(s rpc.AppGate_OpenShellServer) error {
 
 	if err = t.attach(app, req.Input, stdin, stdout); err != nil {
 		if details, ok := err.(exec.CodeExitError); ok {
-			klog.Errorf("can't open stream of app %s: %s", &sessionKey, details.Err.Error())
+			klog.Errorf("unable to open stream of app %s: %s", &sessionKey, details.Err.Error())
 			return status.Errorf(codes.Aborted, "%d", details.Code)
 		} else {
-			klog.Errorf("can't open stream of app %s: %#v", &sessionKey, err)
+			klog.Errorf("unable to open stream of app %s: %#v", &sessionKey, err)
 			return status.Error(codes.Unavailable, err.Error())
 		}
 	}
 
+	klog.Infof("session of app %s closed", &sessionKey)
 	return nil
 }
