@@ -210,7 +210,8 @@ func (t *appSession) startApp(parent context.Context, name *types.NamespacedName
 		return
 	}
 
-	ctx := context.TODO()
+	ctx, cancel := context.WithCancel(parent)
+	defer cancel()
 	watcher, err := t.appClient.CliappV1().CliApps(app.Namespace).Watch(ctx, metav1.ListOptions{
 		FieldSelector: fields.Set{"metadata.name": app.Name}.AsSelector().String(),
 	})
@@ -233,6 +234,11 @@ func (t *appSession) startApp(parent context.Context, name *types.NamespacedName
 			case watch.Added, watch.Modified:
 				app = ev.Object.(*appcorev1.CliApp)
 				if app.Status.Phase == appcorev1.CliAppPhaseLive {
+					return
+				}
+
+				if len(app.Status.Error) > 0 {
+					err = xerrors.New(app.Status.Error)
 					return
 				}
 			case watch.Deleted:

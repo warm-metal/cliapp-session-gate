@@ -19,17 +19,19 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
-	"syscall"
-	"time"
 )
 
-func FetchGateEndpoints(clientset *kubernetes.Clientset) ([]string, error) {
-	return fetchServiceEndpoints(clientset, "cliapp-system", "cliapp-session-gate", "session-gate")
+func FetchGateEndpoints(ctx context.Context, clientset *kubernetes.Clientset) ([]string, error) {
+	return fetchServiceEndpoints(
+		ctx, clientset, "cliapp-system", "cliapp-session-gate", "session-gate",
+	)
 }
 
-func fetchServiceEndpoints(clientset *kubernetes.Clientset, namespace, service, port string) (addrs []string, err error) {
+func fetchServiceEndpoints(
+	ctx context.Context, clientset *kubernetes.Clientset, namespace, service, port string,
+) (addrs []string, err error) {
 	svc, err := clientset.CoreV1().Services(namespace).
-		Get(context.TODO(), service, metav1.GetOptions{})
+		Get(ctx, service, metav1.GetOptions{})
 	if err != nil {
 		return nil, xerrors.Errorf(
 			`can't fetch endpoint from Service "%s/%s": %s`, namespace, service, err)
@@ -59,7 +61,7 @@ func fetchServiceEndpoints(clientset *kubernetes.Clientset, namespace, service, 
 	}
 
 	if nodePort > 0 {
-		nodes, err := clientset.CoreV1().Nodes().List(context.TODO(), metav1.ListOptions{})
+		nodes, err := clientset.CoreV1().Nodes().List(ctx, metav1.ListOptions{})
 		if err != nil {
 			return nil, xerrors.Errorf(`can't list node while enumerating Service NodePort: %s`, err)
 		}
@@ -77,16 +79,14 @@ func fetchServiceEndpoints(clientset *kubernetes.Clientset, namespace, service, 
 	return
 }
 
-func ExecCliApp(endpoints []string, app *appcorev1.CliApp, args []string, stdin io.Reader, stdout io.Writer) error {
+func ExecCliApp(ctx context.Context, endpoints []string, app *appcorev1.CliApp, args []string, stdin io.Reader, stdout io.Writer) error {
 	var cc *grpc.ClientConn
 	for i, ep := range endpoints {
 		endpoint, err := url.Parse(ep)
 		if err != nil {
 			panic(err)
 		}
-		ctx, cancel := context.WithTimeout(context.TODO(), 3*time.Second)
 		cc, err = grpc.DialContext(ctx, endpoint.Host, grpc.WithInsecure(), grpc.WithBlock())
-		cancel()
 		if err == nil {
 			break
 		}
@@ -102,30 +102,17 @@ func ExecCliApp(endpoints []string, app *appcorev1.CliApp, args []string, stdin 
 		return xerrors.Errorf("all remote endpoints are unavailable")
 	}
 
-	stdInFd, isTerminal := term.GetFdInfo(stdin)
-	if !isTerminal {
-		return xerrors.Errorf("can't execute the command without a terminal")
-	}
+	stdInFd, stdinIsTerminal := term.GetFdInfo(stdin)
+	stdOutFd, stdOutIsTerminal := term.GetFdInfo(stdout)
 
-	stdOutFd, isTerminal := term.GetFdInfo(stdout)
-	if !isTerminal {
-		return xerrors.Errorf("can't execute the command without a terminal")
-	}
-
-	state, err := term.MakeRaw(stdInFd)
-	if err != nil {
-		return xerrors.Errorf("can't initialize terminal: %s", err)
-	}
-
-	defer func() {
-		term.RestoreTerminal(stdInFd, state)
-	}()
-
-	appCli := rpc.NewAppGateClient(cc)
-
-	sh, err := appCli.OpenShell(context.TODO())
+	sh, err := rpc.NewAppGateClient(cc).OpenShell(ctx)
 	if err != nil {
 		return xerrors.Errorf("unable to open app session: %s", err)
+	}
+
+	var initTermSize *rpc.TerminalSize
+	if stdOutIsTerminal {
+		initTermSize = getSize(stdOutFd)
 	}
 
 	err = sh.Send(&rpc.StdIn{
@@ -134,7 +121,7 @@ func ExecCliApp(endpoints []string, app *appcorev1.CliApp, args []string, stdin 
 			Namespace: app.Namespace,
 		},
 		Input:        args,
-		TerminalSize: getSize(stdOutFd),
+		TerminalSize: initTermSize,
 	})
 
 	if err != nil {
@@ -199,10 +186,12 @@ func ExecCliApp(endpoints []string, app *appcorev1.CliApp, args []string, stdin 
 	defer signal.Stop(winch)
 	defer close(winch)
 
-	signCh := make(chan os.Signal, 1)
-	signal.Ignore(syscall.SIGPIPE)
-	signal.Notify(signCh, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
-	defer close(signCh)
+	var originalStdinState *term.State
+	defer func() {
+		if originalStdinState != nil {
+			term.RestoreTerminal(stdInFd, originalStdinState)
+		}
+	}()
 
 	for {
 		select {
@@ -213,13 +202,16 @@ func ExecCliApp(endpoints []string, app *appcorev1.CliApp, args []string, stdin 
 
 			return err
 		case <-winch:
+			if !stdOutIsTerminal {
+				break
+			}
+
 			size := getSize(stdOutFd)
 			if err = sh.Send(&rpc.StdIn{TerminalSize: size}); err != nil {
 				return err
 			}
-		case sig := <-signCh:
-			signal.Stop(signCh)
-			return exec.CodeExitError{Code: 1, Err: xerrors.Errorf("signal %s", sig)}
+		case <-ctx.Done():
+			return nil
 		case in, ok := <-inCh:
 			if ok {
 				if err = sh.Send(&rpc.StdIn{Input: []string{in}}); err != nil {
@@ -228,6 +220,16 @@ func ExecCliApp(endpoints []string, app *appcorev1.CliApp, args []string, stdin 
 			}
 		case out, ok := <-outCh:
 			if ok {
+				// Once the first stdout received, the shell session is actually opened.
+				// Before that, users also could exit the command by sent an interrupt.
+				if stdinIsTerminal && originalStdinState == nil {
+					var err error
+					originalStdinState, err = term.MakeRaw(stdInFd)
+					if err != nil {
+						return xerrors.Errorf("can't initialize terminal: %s", err)
+					}
+				}
+
 				fmt.Fprint(stdout, out)
 			}
 		}

@@ -132,9 +132,6 @@ func (t *terminalGate) OpenShell(s rpc.AppGate_OpenShellServer) error {
 	if req.App.Namespace == "" {
 		return status.Error(codes.InvalidArgument, "App.Namespace is required in the first request.")
 	}
-	if req.TerminalSize == nil {
-		return status.Error(codes.InvalidArgument, "TerminalSize is required.")
-	}
 
 	sessionKey := types.NamespacedName{
 		Namespace: req.App.Namespace,
