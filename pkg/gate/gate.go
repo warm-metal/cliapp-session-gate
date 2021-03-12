@@ -2,7 +2,6 @@ package gate
 
 import (
 	"context"
-	"fmt"
 	"github.com/warm-metal/cliapp-session-gate/pkg/rpc"
 	appcorev1 "github.com/warm-metal/cliapp/pkg/apis/cliapp/v1"
 	appv1 "github.com/warm-metal/cliapp/pkg/clientset/versioned"
@@ -56,8 +55,6 @@ func (t *terminalGate) init() {
 	if err := appcorev1.AddToScheme(scheme.Scheme); err != nil {
 		panic(err)
 	}
-
-	fmt.Printf("All types:%#v\n", scheme.Scheme.AllKnownTypes())
 
 	var err error
 	t.config, err = rest.InClusterConfig()
@@ -148,20 +145,21 @@ func (t *terminalGate) OpenShell(s rpc.AppGate_OpenShellServer) error {
 
 	t.sessionGuard.Unlock()
 
-	klog.Infof("fetch app %s", &sessionKey)
+	defer func() {
+		if err := session.close(s.Context(), &sessionKey); err != nil {
+			klog.Errorf("unable to close session of app %s: %s", &sessionKey, err)
+		}
+
+		klog.Infof("app %s closed", &sessionKey)
+	}()
+
+	klog.Infof("open app %s", &sessionKey)
 	app, err := session.open(s.Context(), &sessionKey)
 	if err != nil {
 		klog.Errorf("unable to open app %s: %s", &sessionKey, err)
 		return status.Error(codes.Unavailable, err.Error())
 	}
 
-	defer func() {
-		if err := session.close(s.Context(), &sessionKey); err != nil {
-			klog.Errorf("unable to close session of app %s: %s", &sessionKey, err)
-		}
-	}()
-
-	klog.Infof("open session to app %s", &sessionKey)
 	stdin, stdout := genIOStreams(s, req.TerminalSize)
 	defer stdin.Close()
 
@@ -175,6 +173,5 @@ func (t *terminalGate) OpenShell(s rpc.AppGate_OpenShellServer) error {
 		}
 	}
 
-	klog.Infof("session of app %s closed", &sessionKey)
 	return nil
 }

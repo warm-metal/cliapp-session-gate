@@ -10,6 +10,7 @@ require (
 	golang.org/x/sys v0.0.0-20201112073958-5cba982894dd
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1
 	google.golang.org/grpc v1.35.0
+	google.golang.org/protobuf v1.25.0
 	k8s.io/api v0.20.2
 	k8s.io/apimachinery v0.20.2
 	k8s.io/client-go v0.20.2

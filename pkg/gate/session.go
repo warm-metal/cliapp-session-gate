@@ -93,7 +93,7 @@ func (t *appSession) remoteClose(ctx context.Context, name *types.NamespacedName
 	}
 
 	if t.outgoingOpenSession != nil {
-		// Cancel all outgoing session open
+		klog.Info("cancel all outgoing request of app %s", name)
 		t.ctxCancel()
 		t.outgoingOpenSession = nil
 		t.ctxCancel = nil
@@ -106,7 +106,12 @@ func (t *appSession) remoteClose(ctx context.Context, name *types.NamespacedName
 		Context: ctx,
 		Cancel:  t.ctxCancel,
 		ApplyChanges: func(ctx context.Context) error {
-			return t.closeApp(ctx, name)
+			klog.Info("close app", name)
+			err := t.closeApp(ctx, name)
+			if err != nil {
+				klog.Info("unable to close app %s: %s", name, err)
+			}
+			return err
 		},
 		Error: done,
 	}
@@ -245,8 +250,13 @@ func (t *appSession) startApp(parent context.Context, name *types.NamespacedName
 				err = xerrors.Errorf("app is deleted")
 				return
 			case watch.Error:
-				st := ev.Object.(*metav1.Status)
-				err = xerrors.Errorf("failed %s", st.String())
+				st, ok := ev.Object.(*metav1.Status)
+				if ok {
+					err = xerrors.Errorf("failed %s", st.String())
+				} else {
+					err = xerrors.Errorf("unknown error:%#v", ev.Object)
+				}
+
 				return
 			default:
 				panic(ev.Type)

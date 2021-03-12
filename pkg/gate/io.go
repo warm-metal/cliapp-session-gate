@@ -1,8 +1,9 @@
 package gate
 
 import (
-	"context"
 	"github.com/warm-metal/cliapp-session-gate/pkg/rpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 	"io"
 	"k8s.io/client-go/tools/remotecommand"
 	"k8s.io/klog/v2"
@@ -35,12 +36,11 @@ func (r *clientReader) loop() {
 		klog.V(1).Info("prepare to receive stdin")
 		req, err := r.s.Recv()
 		if err != nil {
-			if err != context.Canceled {
+			if status.Code(err) != codes.Canceled {
 				klog.Errorf("unable to read stdin: %s", err)
 			}
 
 			klog.V(1).Infof("unable to read stdin: %s", err)
-
 			return
 		}
 
@@ -118,14 +118,12 @@ func (w stdoutWriter) Write(p []byte) (n int, err error) {
 }
 
 func genIOStreams(s rpc.AppGate_OpenShellServer, initSize *rpc.TerminalSize) (reader *clientReader, stdout io.Writer) {
-	in := clientReader{s: s, sizeCh: make(chan *remotecommand.TerminalSize)}
+	in := clientReader{s: s, sizeCh: make(chan *remotecommand.TerminalSize, 1)}
 	if initSize != nil {
-		go func() {
-			in.sizeCh <- &remotecommand.TerminalSize{
-				Width:  uint16(initSize.Width),
-				Height: uint16(initSize.Height),
-			}
-		}()
+		in.sizeCh <- &remotecommand.TerminalSize{
+			Width:  uint16(initSize.Width),
+			Height: uint16(initSize.Height),
+		}
 	}
 
 	go in.loop()
