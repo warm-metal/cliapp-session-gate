@@ -1,5 +1,6 @@
 FROM golang:1.15 as builder
 
+ENV GOPROXY="goproxy.cn"
 WORKDIR /go/src/cliapp-session-gate
 COPY go.mod go.sum ./
 RUN go mod download
