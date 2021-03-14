@@ -3,6 +3,7 @@ module github.com/warm-metal/cliapp-session-gate
 go 1.15
 
 require (
+	github.com/fatih/color v1.10.0
 	github.com/golang/protobuf v1.4.3
 	github.com/moby/term v0.0.0-20200915141129-7f0af18e79f2
 	github.com/warm-metal/cliapp v0.0.0-20210312163814-5f0ff75d3678

@@ -2,6 +2,8 @@ package gate
 
 import (
 	"context"
+	"github.com/fatih/color"
+	"github.com/warm-metal/cliapp-session-gate/pkg/rpc"
 	appcorev1 "github.com/warm-metal/cliapp/pkg/apis/cliapp/v1"
 	appv1 "github.com/warm-metal/cliapp/pkg/clientset/versioned"
 	"go.uber.org/atomic"
@@ -27,7 +29,9 @@ type appSession struct {
 	guard                sync.Mutex
 }
 
-func (t *appSession) open(ctx context.Context, name *types.NamespacedName) (app *appcorev1.CliApp, err error) {
+func (t *appSession) open(
+	ctx context.Context, progress *progressWriter, name *types.NamespacedName,
+	) (app *appcorev1.CliApp, err error) {
 	active := t.activeCount.Add(1)
 	if active < 1 {
 		panic(name.String())
@@ -38,7 +42,7 @@ func (t *appSession) open(ctx context.Context, name *types.NamespacedName) (app 
 		return t.app, nil
 	}
 
-	err = <-t.remoteOpen(ctx, name)
+	err = <-t.remoteOpen(ctx, progress, name)
 	app = t.app
 	return
 }
@@ -141,7 +145,7 @@ func (t *appSession) closeApp(parent context.Context, name *types.NamespacedName
 	})
 }
 
-func (t *appSession) remoteOpen(ctx context.Context, name *types.NamespacedName) <-chan error {
+func (t *appSession) remoteOpen(ctx context.Context, progress *progressWriter, name *types.NamespacedName) <-chan error {
 	t.guard.Lock()
 	defer t.guard.Unlock()
 
@@ -167,7 +171,7 @@ func (t *appSession) remoteOpen(ctx context.Context, name *types.NamespacedName)
 		Context: ctx,
 		Cancel:  t.ctxCancel,
 		ApplyChanges: func(ctx context.Context) error {
-			app, err := t.startApp(ctx, name)
+			app, err := t.startApp(ctx, progress, name)
 			if err != nil {
 				return err
 			}
@@ -186,7 +190,9 @@ func (t *appSession) remoteOpen(ctx context.Context, name *types.NamespacedName)
 	return done
 }
 
-func (t *appSession) startApp(parent context.Context, name *types.NamespacedName) (app *appcorev1.CliApp, err error) {
+func (t *appSession) startApp(
+	parent context.Context, progress *progressWriter, name *types.NamespacedName,
+	) (app *appcorev1.CliApp, err error) {
 	err = retry.RetryOnConflict(retry.DefaultRetry, func() error {
 		ctx, cancel := timeoutContext(parent)
 		defer cancel()
@@ -246,6 +252,15 @@ func (t *appSession) startApp(parent context.Context, name *types.NamespacedName
 					err = xerrors.New(app.Status.Error)
 					return
 				}
+
+				switch app.Status.Phase {
+				case appcorev1.CliAppPhaseWaitingForSessions, appcorev1.CliAppPhaseRecovering:
+				case appcorev1.CliAppPhaseBuilding:
+					progress.WriteLn("building image...")
+				default:
+					progress.WriteLn("preparing Pods...")
+				}
+
 			case watch.Deleted:
 				err = xerrors.Errorf("app is deleted")
 				return
@@ -272,5 +287,25 @@ func (t *appSession) startApp(parent context.Context, name *types.NamespacedName
 			klog.Errorf("watch context exited %s: %s", name, err)
 			return
 		}
+	}
+}
+
+type progressWriter struct {
+	s rpc.AppGate_OpenShellServer
+	color *color.Color
+}
+
+func newProgressWriter(s rpc.AppGate_OpenShellServer) *progressWriter {
+	c := color.New(color.FgHiBlack)
+	c.EnableColor()
+	return &progressWriter{
+		color:c,
+		s: s,
+	}
+}
+
+func (w progressWriter) WriteLn(a string) {
+	if err := w.s.Send(&rpc.StdOut{Output:[]byte(w.color.Sprintf("❯❯ %s\n", a))}); err != nil {
+		klog.Error("unable to send stdout back: %s", err)
 	}
 }

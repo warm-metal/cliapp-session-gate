@@ -154,13 +154,13 @@ func (t *terminalGate) OpenShell(s rpc.AppGate_OpenShellServer) error {
 	}()
 
 	klog.Infof("open app %s", &sessionKey)
-	app, err := session.open(s.Context(), &sessionKey)
+	app, err := session.open(s.Context(), newProgressWriter(s), &sessionKey)
 	if err != nil {
 		klog.Errorf("unable to open app %s: %s", &sessionKey, err)
 		return status.Error(codes.Unavailable, err.Error())
 	}
 
-	stdin, stdout := genIOStreams(s, req.TerminalSize)
+	stdin, stdout := genClientIOStreams(s, req.TerminalSize)
 	defer stdin.Close()
 
 	if err = t.attach(app, req.Input, stdin, stdout); err != nil {

@@ -105,7 +105,8 @@ type stdoutWriter struct {
 func (w stdoutWriter) Write(p []byte) (n int, err error) {
 	klog.V(1).Infof("stdout: %s", string(p))
 	err = w.s.Send(&rpc.StdOut{
-		Output: string(p),
+		Output: p,
+		Raw:    true,
 	})
 
 	if err != nil {
@@ -117,7 +118,7 @@ func (w stdoutWriter) Write(p []byte) (n int, err error) {
 	return
 }
 
-func genIOStreams(s rpc.AppGate_OpenShellServer, initSize *rpc.TerminalSize) (reader *clientReader, stdout io.Writer) {
+func genClientIOStreams(s rpc.AppGate_OpenShellServer, initSize *rpc.TerminalSize) (reader *clientReader, stdout io.Writer) {
 	in := clientReader{s: s, sizeCh: make(chan *remotecommand.TerminalSize, 1)}
 	if initSize != nil {
 		in.sizeCh <- &remotecommand.TerminalSize{

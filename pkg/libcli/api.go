@@ -125,7 +125,7 @@ func ExecCliApp(ctx context.Context, endpoints []string, app *appcorev1.CliApp, 
 	})
 
 	if err != nil {
-		return xerrors.Errorf("can't open app: %s", err)
+		return xerrors.Errorf("unable to open app: %s", err)
 	}
 
 	errCh := make(chan error)
@@ -152,9 +152,9 @@ func ExecCliApp(ctx context.Context, endpoints []string, app *appcorev1.CliApp, 
 		}
 	}()
 
-	outCh := make(chan string)
+	rawOutCh := make(chan string)
 	go func() {
-		defer close(outCh)
+		defer close(rawOutCh)
 		for {
 			resp, err := sh.Recv()
 			if err != nil {
@@ -176,7 +176,11 @@ func ExecCliApp(ctx context.Context, endpoints []string, app *appcorev1.CliApp, 
 			}
 
 			if len(resp.Output) > 0 {
-				outCh <- resp.Output
+				if resp.Raw {
+					rawOutCh <- string(resp.Output)
+				} else {
+					fmt.Print(string(resp.Output))
+				}
 			}
 		}
 	}()
@@ -218,7 +222,7 @@ func ExecCliApp(ctx context.Context, endpoints []string, app *appcorev1.CliApp, 
 					return err
 				}
 			}
-		case out, ok := <-outCh:
+		case out, ok := <-rawOutCh:
 			if ok {
 				// Once the first stdout received, the shell session is actually opened.
 				// Before that, users also could exit the command by sent an interrupt.

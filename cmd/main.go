@@ -6,6 +6,7 @@ import (
 	"flag"
 	"github.com/warm-metal/cliapp-session-gate/pkg/gate"
 	"google.golang.org/grpc"
+	_ "google.golang.org/grpc/grpclog"
 	"k8s.io/klog/v2"
 	"net"
 )
